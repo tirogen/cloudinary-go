@@ -3,6 +3,7 @@ package uploader
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"strconv"
 	"time"
 
@@ -114,6 +115,27 @@ func (u *API) Upload(ctx context.Context, file interface{}, uploadParams UploadP
 	}
 
 	body, err := u.postFile(ctx, file, formParams)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &UploadResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+
+	err = api.HandleRawResponse(body, result)
+	return result, nil
+}
+
+func (u *API) UploadLarge(ctx context.Context, file io.Reader, size int64, uploadParams UploadParams) (*UploadResult, error) {
+	formParams, err := api.StructToParams(uploadParams)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := u.postLargeFileWithSize(ctx, file, size, formParams)
 	if err != nil {
 		return nil, err
 	}

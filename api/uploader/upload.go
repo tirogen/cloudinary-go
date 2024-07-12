@@ -202,6 +202,19 @@ func (u *API) postFile(ctx context.Context, file interface{}, formParams url.Val
 	}
 }
 
+func (u *API) postLargeFileWithSize(ctx context.Context, file io.Reader, size int64, formParams url.Values) ([]byte, error) {
+	unsigned, _ := strconv.ParseBool(formParams.Get("unsigned"))
+	if !unsigned {
+		var err error
+		formParams, err = u.signRequest(formParams)
+		if err != nil {
+			return nil, err
+		}
+	}
+	uploadEndpoint := api.BuildPath(api.Auto, upload)
+	return u.postLargeIOReader(ctx, uploadEndpoint, file, size, "file", formParams)
+}
+
 // postLocalFile creates a new file upload http request with optional extra params.
 func (u *API) postLocalFile(ctx context.Context, urlPath string, filePath string, formParams url.Values) ([]byte, error) {
 	file, err := os.Open(filePath)
